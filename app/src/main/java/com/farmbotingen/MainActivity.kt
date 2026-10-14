@@ -93,6 +93,7 @@ class MainActivity : Activity() {
         addPair(coordsCard, "Chat düğmesi X", FarmAccessibilityService.KEY_CHAT_X, "Chat düğmesi Y", FarmAccessibilityService.KEY_CHAT_Y)
         addPair(coordsCard, "Farm hedefi X", FarmAccessibilityService.KEY_FARM_X, "Farm hedefi Y", FarmAccessibilityService.KEY_FARM_Y)
         addPair(coordsCard, "Buff hedefi X", FarmAccessibilityService.KEY_BUFF_X, "Buff hedefi Y", FarmAccessibilityService.KEY_BUFF_Y)
+        addPair(coordsCard, "Free Revival X", FarmAccessibilityService.KEY_REVIVAL_X, "Free Revival Y", FarmAccessibilityService.KEY_REVIVAL_Y)
         root.addView(coordsCard, marginBottom())
 
         val buffCard = card()
