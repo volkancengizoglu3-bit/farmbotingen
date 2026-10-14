@@ -57,8 +57,11 @@ class MainActivity : Activity() {
                 val editor = prefs.edit()
                 for ((key, field) in fields) {
                     val value = field.text.toString().trim().toIntOrNull()
-                    if (value == null || value !in 0..1000) {
-                        Toast.makeText(this@MainActivity, "$key için 0–1000 arası sayı gir.", Toast.LENGTH_LONG).show()
+                    val isThreshold = key == FarmAccessibilityService.KEY_ATK_THRESHOLD ||
+                        key == FarmAccessibilityService.KEY_DEF_THRESHOLD
+                    if (value == null || value < 0 || (!isThreshold && value !in 0..1000)) {
+                        val hint = if (isThreshold) "0 veya daha büyük bir sayı" else "0–1000 arası sayı"
+                        Toast.makeText(this@MainActivity, "$key için $hint gir.", Toast.LENGTH_LONG).show()
                         return@setOnClickListener
                     }
                     editor.putInt(key, value)
