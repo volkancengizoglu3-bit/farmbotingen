@@ -20,8 +20,8 @@ class FarmAccessibilityService : AccessibilityService() {
 
     fun tapNormalized(x: Int, y: Int, done: (() -> Unit)? = null) {
         val dm = resources.displayMetrics
-        val px = (x.coerceIn(0, 0, 1000) / 1000f * dm.widthPixels).coerceIn(0f, dm.widthPixels.toFloat() - 1)
-        val py = (y.coerceIn(0, 0, 1000) / 1000f * dm.heightPixels).coerceIn(0f, dm.heightPixels.toFloat() - 1)
+        val px = (x.coerceIn(0, 1000) / 1000f * dm.widthPixels).coerceIn(0f, dm.widthPixels.toFloat() - 1)
+        val py = (y.coerceIn(0, 1000) / 1000f * dm.heightPixels).coerceIn(0f, dm.heightPixels.toFloat() - 1)
         val path = Path().apply { moveTo(px, py) }
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, 80))
