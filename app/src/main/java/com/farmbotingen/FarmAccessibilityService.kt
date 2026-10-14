@@ -4,12 +4,14 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -21,23 +23,157 @@ import android.view.accessibility.AccessibilityEvent
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 class FarmAccessibilityService : AccessibilityService() {
     private var windowManager: WindowManager? = null
     private var bubble: TextView? = null
     private var popup: View? = null
     private var popupParams: WindowManager.LayoutParams? = null
+    private val detectorHandler = Handler(Looper.getMainLooper())
+    private var detectorRunning = false
+    private var screenshotBusy = false
+    private var revivalTappedForCurrentDeath = false
+    private var lastDeathEvidenceAt = 0L
+    private val textRecognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
+    private val detectorLoop = object : Runnable {
+        override fun run() {
+            if (!detectorRunning) return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !screenshotBusy) captureAndInspect()
+            detectorHandler.postDelayed(this, 1800)
+        }
+    }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
         if (Settings.canDrawOverlays(this)) showFloatingControls()
+        startDeathDetection()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) = Unit
+
+    private fun startDeathDetection() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || detectorRunning) return
+        detectorRunning = true
+        detectorHandler.post(detectorLoop)
+    }
+
+    private fun captureAndInspect() {
+        if (screenshotBusy || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        screenshotBusy = true
+        try {
+            takeScreenshot(0, mainExecutor, object : TakeScreenshotCallback {
+                override fun onSuccess(screenshot: ScreenshotResult) {
+                    var bitmap: Bitmap? = null
+                    try {
+                        bitmap = Bitmap.wrapHardwareBuffer(screenshot.hardwareBuffer, screenshot.colorSpace)
+                        screenshot.hardwareBuffer.close()
+                        if (bitmap == null) { screenshotBusy = false; return }
+                        val image = InputImage.fromBitmap(bitmap, 0)
+                        textRecognizer.process(image)
+                            .addOnSuccessListener { result -> inspectScreenText(result.text) }
+                            .addOnFailureListener { }
+                            .addOnCompleteListener {
+                                bitmap?.recycle()
+                                screenshotBusy = false
+                            }
+                    } catch (_: Exception) {
+                        try { screenshot.hardwareBuffer.close() } catch (_: Exception) {}
+                        bitmap?.recycle()
+                        screenshotBusy = false
+                    }
+                }
+                override fun onFailure(errorCode: Int) { screenshotBusy = false }
+            })
+        } catch (_: Exception) { screenshotBusy = false }
+    }
+
+    private fun inspectScreenText(rawText: String) {
+        val text = rawText.lowercase()
+        val isDefeated = text.contains("character is defeated") ||
+            (text.contains("free revival") && text.contains("respawn now")) ||
+            (text.contains("you have been defeated") && text.contains("respawn"))
+        val now = System.currentTimeMillis()
+        if (isDefeated) {
+            lastDeathEvidenceAt = now
+            if (!revivalTappedForCurrentDeath) {
+                val prefs = getSharedPreferences("farmbotingen_settings", MODE_PRIVATE)
+                val x = prefs.getInt(KEY_REVIVAL_X, -1)
+                val y = prefs.getInt(KEY_REVIVAL_Y, -1)
+                if (x in 0..1000 && y in 0..1000) {
+                    revivalTappedForCurrentDeath = true
+                    detectorHandler.postDelayed({ confirmDeathThenTapRevival() }, 450)
+                }
+            }
+        } else if (now - lastDeathEvidenceAt > 7000) {
+            revivalTappedForCurrentDeath = false
+        }
+    }
+
+    private fun confirmDeathThenTapRevival() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || screenshotBusy) {
+            revivalTappedForCurrentDeath = false
+            return
+        }
+        screenshotBusy = true
+        try {
+            takeScreenshot(0, mainExecutor, object : TakeScreenshotCallback {
+                override fun onSuccess(screenshot: ScreenshotResult) {
+                    var bitmap: Bitmap? = null
+                    try {
+                        bitmap = Bitmap.wrapHardwareBuffer(screenshot.hardwareBuffer, screenshot.colorSpace)
+                        screenshot.hardwareBuffer.close()
+                        if (bitmap == null) { screenshotBusy = false; revivalTappedForCurrentDeath = false; return }
+                        textRecognizer.process(InputImage.fromBitmap(bitmap, 0))
+                            .addOnSuccessListener { result ->
+                                val text = result.text.lowercase()
+                                val confirmed = text.contains("character is defeated") ||
+                                    (text.contains("free revival") && text.contains("respawn now")) ||
+                                    (text.contains("you have been defeated") && text.contains("respawn"))
+                                if (confirmed) {
+                                    val prefs = getSharedPreferences("farmbotingen_settings", MODE_PRIVATE)
+                                    val x = prefs.getInt(KEY_REVIVAL_X, -1)
+                                    val y = prefs.getInt(KEY_REVIVAL_Y, -1)
+                                    if (x in 0..1000 && y in 0..1000) {
+                                        tapNormalized(x, y) {
+                                            Toast.makeText(this@FarmAccessibilityService, "Ölüm ekranı algılandı; Free Revival dokunuşu gönderildi.", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                } else {
+                                    revivalTappedForCurrentDeath = false
+                                }
+                            }
+                            .addOnFailureListener { revivalTappedForCurrentDeath = false }
+                            .addOnCompleteListener {
+                                bitmap?.recycle()
+                                screenshotBusy = false
+                            }
+                    } catch (_: Exception) {
+                        try { screenshot.hardwareBuffer.close() } catch (_: Exception) {}
+                        bitmap?.recycle()
+                        screenshotBusy = false
+                        revivalTappedForCurrentDeath = false
+                    }
+                }
+                override fun onFailure(errorCode: Int) {
+                    screenshotBusy = false
+                    revivalTappedForCurrentDeath = false
+                }
+            })
+        } catch (_: Exception) {
+            screenshotBusy = false
+            revivalTappedForCurrentDeath = false
+        }
+    }
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
+        detectorRunning = false
+        detectorHandler.removeCallbacks(detectorLoop)
+        textRecognizer.close()
         removeFloatingControls()
         if (instance === this) instance = null
         super.onDestroy()
