@@ -99,6 +99,10 @@ class MainActivity : Activity() {
             text = "Buff modunu etkinleştir"; setTextColor(white)
             buttonTintList = android.content.res.ColorStateList.valueOf(accent)
             isChecked = prefs.getBoolean(FarmAccessibilityService.KEY_BUFF_ENABLED, false)
+            setOnCheckedChangeListener { _, checked ->
+                prefs.edit().putBoolean(FarmAccessibilityService.KEY_BUFF_ENABLED, checked).apply()
+                Toast.makeText(this@MainActivity, if (checked) "Buff protokolü açıldı." else "Buff kapalı: bot doğrudan farm yapacak.", Toast.LENGTH_SHORT).show()
+            }
         }
         buff.addView(buffEnabled)
         addSingle(buff, "ATK alt sınırı", FarmAccessibilityService.KEY_ATK_THRESHOLD, "0")
