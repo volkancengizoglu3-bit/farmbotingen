@@ -129,8 +129,10 @@ class FarmAccessibilityService : AccessibilityService() {
 
         val atk = extractStat(topLeft, listOf("atk", "attack"))
         val def = extractStat(topLeft, listOf("def", "defense", "defence"))
-        if (atk != null) lastAtk = atk
-        if (def != null) lastDef = def
+        // Do not reuse old readings: ATK and DEF must both be detected in this screenshot.
+        lastAtk = atk
+        lastDef = def
+        bubble?.text = "F\\nA:${atk ?: "?"} D:${def ?: "?"}"
 
         if (automationRunning && state == State.FARM) {
             val thresholdAtk = prefs.getInt(KEY_ATK_THRESHOLD, 0)
@@ -161,7 +163,7 @@ class FarmAccessibilityService : AccessibilityService() {
 
     private fun extractStat(text: String, labels: List<String>): Int? {
         for (label in labels) {
-            val regex = Regex("(?:^|\\\\s)${Regex.escape(label)}\\\\s*[:：]?\\\\s*([0-9][0-9,]*)", RegexOption.IGNORE_CASE)
+            val regex = Regex("(?:^|\\s)${Regex.escape(label)}\\s*[:：]?\\s*([0-9][0-9,]*)", RegexOption.IGNORE_CASE)
             val match = regex.find(text) ?: continue
             return match.groupValues[1].replace(",", "").toIntOrNull()
         }
@@ -228,7 +230,8 @@ class FarmAccessibilityService : AccessibilityService() {
     }
 
     fun startAutomation() {
-        val required = listOf(KEY_CHAT, KEY_CHAT_CLOSE, KEY_FARM, KEY_ATTACK, KEY_SHIELD, KEY_REVIVAL)
+        val required = mutableListOf(KEY_CHAT, KEY_CHAT_CLOSE, KEY_FARM, KEY_ATTACK, KEY_SHIELD, KEY_REVIVAL)
+        if (prefs.getBoolean(KEY_BUFF_ENABLED, false)) required.add(KEY_BUFF)
         val missing = required.filter { !valid(prefs.getInt("${it}_X", -1), prefs.getInt("${it}_Y", -1)) }
         if (missing.isNotEmpty()) {
             Toast.makeText(this, "Eksik konumlar: " + missing.joinToString(), Toast.LENGTH_LONG).show(); return
@@ -398,7 +401,7 @@ class FarmAccessibilityService : AccessibilityService() {
         val targetX=prefs.getInt("${prefix}_X",-1); val targetY=prefs.getInt("${prefix}_Y",-1)
         val closeX=prefs.getInt("${KEY_CHAT_CLOSE}_X",-1); val closeY=prefs.getInt("${KEY_CHAT_CLOSE}_Y",-1)
         if(!valid(chatX,chatY)||!valid(targetX,targetY)||!valid(closeX,closeY)) {
-            Toast.makeText(this,"Chat açma/kapatma ve hedef konumlarını seç.",Toast.LENGTH_LONG).show(); done?.invoke(); return
+            Toast.makeText(this,"Chat açma/kapatma ve hedef konumlarını seç. Hedef: ${prefix}",Toast.LENGTH_LONG).show(); return
         }
         tapNormalized(chatX,chatY) { handler.postDelayed({
             tapNormalized(targetX,targetY) { handler.postDelayed({
