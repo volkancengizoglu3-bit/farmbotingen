@@ -156,6 +156,9 @@ class FarmAccessibilityService : AccessibilityService() {
                 Handler(Looper.getMainLooper()).post { Toast.makeText(this, "Buff dokunuş dizisi tamamlandı.", Toast.LENGTH_SHORT).show() }
             }
         }
+        addPopupAction(container, "♥  Free Revival (test)", Color.rgb(144, 87, 45)) {
+            tapRevival(getSharedPreferences("farmbotingen_settings", MODE_PRIVATE))
+        }
         addPopupAction(container, "⚙  Ayarları aç", Color.rgb(53, 76, 105)) {
             val i = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(i)
@@ -234,6 +237,18 @@ class FarmAccessibilityService : AccessibilityService() {
         }, Handler(Looper.getMainLooper()))
     }
 
+    fun tapRevival(prefs: SharedPreferences) {
+        val x = prefs.getInt(KEY_REVIVAL_X, -1)
+        val y = prefs.getInt(KEY_REVIVAL_Y, -1)
+        if (x !in 0..1000 || y !in 0..1000) {
+            Toast.makeText(this, "Önce Free Revival X/Y koordinatlarını kaydet.", Toast.LENGTH_LONG).show()
+            return
+        }
+        tapNormalized(x, y) {
+            Toast.makeText(this, "Free Revival dokunuşu gönderildi.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     fun travelToTarget(targetPrefix: String, prefs: SharedPreferences, done: (() -> Unit)? = null) {
         val chatX = prefs.getInt(KEY_CHAT_X, -1)
         val chatY = prefs.getInt(KEY_CHAT_Y, -1)
@@ -260,6 +275,8 @@ class FarmAccessibilityService : AccessibilityService() {
         const val KEY_FARM_Y = "farm_y"
         const val KEY_BUFF_X = "buff_x"
         const val KEY_BUFF_Y = "buff_y"
+        const val KEY_REVIVAL_X = "revival_x"
+        const val KEY_REVIVAL_Y = "revival_y"
         const val KEY_BUFF_ENABLED = "buff_enabled"
         const val KEY_ATK_THRESHOLD = "atk_threshold"
         const val KEY_DEF_THRESHOLD = "def_threshold"
