@@ -95,7 +95,7 @@ class FarmAccessibilityService : AccessibilityService() {
         } catch (_: Exception) { screenshotBusy = false }
     }
 
-    private fun inspectResult(result: Text.Text, width: Int, height: Int) {
+    private fun inspectResult(result: Text, width: Int, height: Int) {
         val raw = result.text.lowercase(Locale.ROOT)
         val dead = raw.contains("character is defeated") ||
             (raw.contains("free revival") && raw.contains("respawn now")) ||
