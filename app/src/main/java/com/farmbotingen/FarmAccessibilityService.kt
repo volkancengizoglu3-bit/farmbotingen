@@ -50,6 +50,14 @@ class FarmAccessibilityService : AccessibilityService() {
 
     private enum class State { FARM, GOING_BUFF, WAITING_BUFF, GOING_FARM, DEAD_WAIT }
 
+    private val farmActionLoop = object : Runnable {
+        override fun run() {
+            if (!automationRunning) return
+            if (state == State.FARM && System.currentTimeMillis() - lastActionAt >= FARM_ACTION_INTERVAL_MS) tapFarmSkills()
+            handler.postDelayed(this, 2000)
+        }
+    }
+
     private val detectorLoop = object : Runnable {
         override fun run() {
             if (!detectorRunning) return
@@ -227,6 +235,8 @@ class FarmAccessibilityService : AccessibilityService() {
         }
         automationRunning = true
         state = State.FARM
+        handler.removeCallbacks(farmActionLoop)
+        handler.postDelayed(farmActionLoop, 2000)
         travelToTarget(KEY_FARM, prefs) {
             if (automationRunning) {
                 tapFarmSkills()
@@ -237,6 +247,7 @@ class FarmAccessibilityService : AccessibilityService() {
 
     fun stopAutomation() {
         automationRunning = false
+        handler.removeCallbacks(farmActionLoop)
         state = State.FARM
         Toast.makeText(this, "Otomasyon durduruldu.", Toast.LENGTH_SHORT).show()
     }
@@ -423,6 +434,7 @@ class FarmAccessibilityService : AccessibilityService() {
         const val KEY_ATK_THRESHOLD="atk_threshold"
         const val KEY_DEF_THRESHOLD="def_threshold"
         private const val BUFF_WAIT_MS=10000L
+        private const val FARM_ACTION_INTERVAL_MS=15000L
         @Volatile private var instance:FarmAccessibilityService?=null
         fun isConnected()=instance!=null
         fun showFloatingControls(){ instance?.showFloatingControls() }
