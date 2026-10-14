@@ -94,6 +94,8 @@ class MainActivity : Activity() {
         addPair(coordsCard, "Chat kapatma X", FarmAccessibilityService.KEY_CHAT_CLOSE_X, "Chat kapatma Y", FarmAccessibilityService.KEY_CHAT_CLOSE_Y)
         addPair(coordsCard, "Farm hedefi X", FarmAccessibilityService.KEY_FARM_X, "Farm hedefi Y", FarmAccessibilityService.KEY_FARM_Y)
         addPair(coordsCard, "Buff hedefi X", FarmAccessibilityService.KEY_BUFF_X, "Buff hedefi Y", FarmAccessibilityService.KEY_BUFF_Y)
+        addPair(coordsCard, "Oto atak X", FarmAccessibilityService.KEY_ATTACK_X, "Oto atak Y", FarmAccessibilityService.KEY_ATTACK_Y)
+        addPair(coordsCard, "Koruyucu kalkan X", FarmAccessibilityService.KEY_SHIELD_X, "Koruyucu kalkan Y", FarmAccessibilityService.KEY_SHIELD_Y)
         addPair(coordsCard, "Free Revival X", FarmAccessibilityService.KEY_REVIVAL_X, "Free Revival Y", FarmAccessibilityService.KEY_REVIVAL_Y)
         root.addView(coordsCard, marginBottom())
 
