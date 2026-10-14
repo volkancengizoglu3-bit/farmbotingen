@@ -28,3 +28,10 @@
 - Tap sequence: tap chat button, wait 500 ms, tap configured target, then wait 1.5 seconds.
 - Automatic ATK/DEF reading, automatic buff trigger, death/respawn detection, and automatic return logic are not implemented yet.
 - Coordinates must be configured and manually tested in the game before relying on them.
+
+
+## Farm activation controls
+- After returning to the farm location, the intended sequence is to tap the configured auto-attack button and then the configured protective-shield button.
+- Auto-attack and protective-shield screen tap points are configurable separately from chat, farm, buff, and Free Revival points.
+- The intended worker runs continuously until the user presses Stop: check ATK/DEF, visit the buff target when either configured threshold is not met, verify the thresholds, return to farm, enable auto-attack and shield, and repeat after buff expiry or death.
+- Important implementation note: OCR-based death detection exists, but reliable ATK/DEF value extraction and the complete persistent loop still need implementation and device testing. Do not represent those as already working until verified.
