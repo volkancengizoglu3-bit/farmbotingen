@@ -90,7 +90,8 @@ class MainActivity : Activity() {
         val coordsCard = card()
         coordsCard.addView(sectionTitle("01  /  DOKUNUŞ NOKTALARI"))
         coordsCard.addView(bodyText("Değerler ekran boyutuna göre 0–1000 aralığındadır. Ekranın ortası yaklaşık 500 / 500."))
-        addPair(coordsCard, "Chat düğmesi X", FarmAccessibilityService.KEY_CHAT_X, "Chat düğmesi Y", FarmAccessibilityService.KEY_CHAT_Y)
+        addPair(coordsCard, "Chat açma X", FarmAccessibilityService.KEY_CHAT_X, "Chat açma Y", FarmAccessibilityService.KEY_CHAT_Y)
+        addPair(coordsCard, "Chat kapatma X", FarmAccessibilityService.KEY_CHAT_CLOSE_X, "Chat kapatma Y", FarmAccessibilityService.KEY_CHAT_CLOSE_Y)
         addPair(coordsCard, "Farm hedefi X", FarmAccessibilityService.KEY_FARM_X, "Farm hedefi Y", FarmAccessibilityService.KEY_FARM_Y)
         addPair(coordsCard, "Buff hedefi X", FarmAccessibilityService.KEY_BUFF_X, "Buff hedefi Y", FarmAccessibilityService.KEY_BUFF_Y)
         addPair(coordsCard, "Free Revival X", FarmAccessibilityService.KEY_REVIVAL_X, "Free Revival Y", FarmAccessibilityService.KEY_REVIVAL_Y)
@@ -112,7 +113,7 @@ class MainActivity : Activity() {
 
         val saveCard = card()
         saveCard.addView(actionButton("Ayarları kaydet", accent) { saveSettings() })
-        saveCard.addView(bodyText("Şimdilik koordinatlara dokunma testleri hazır. Ölüm/dirilme algılama ve otomatik buff döngüsü sonraki aşamada eklenecek."))
+        saveCard.addView(bodyText("Hedefe gitme sırası: chat aç → farm/buff hedefini tıkla → chat kapatma düğmesini tıkla. Free Revival koordinatı ayrıca ayarlanır."))
         root.addView(saveCard)
         root.addView(TextView(this).apply {
             text = "FarmBotInGen  •  Erken test sürümü"
