@@ -390,15 +390,21 @@ class FarmAccessibilityService : AccessibilityService() {
         val chatY = prefs.getInt(KEY_CHAT_Y, -1)
         val targetX = prefs.getInt("${targetPrefix}_X", -1)
         val targetY = prefs.getInt("${targetPrefix}_Y", -1)
-        if (chatX < 0 || chatY < 0 || targetX < 0 || targetY < 0) {
-            Toast.makeText(this, "Önce chat ve hedef koordinatlarını kaydet.", Toast.LENGTH_LONG).show()
+        val closeX = prefs.getInt(KEY_CHAT_CLOSE_X, -1)
+        val closeY = prefs.getInt(KEY_CHAT_CLOSE_Y, -1)
+        if (chatX !in 0..1000 || chatY !in 0..1000 || targetX !in 0..1000 || targetY !in 0..1000 || closeX !in 0..1000 || closeY !in 0..1000) {
+            Toast.makeText(this, "Önce chat açma, chat kapatma ve hedef koordinatlarını kaydet.", Toast.LENGTH_LONG).show()
             done?.invoke()
             return
         }
         tapNormalized(chatX, chatY) {
             Handler(Looper.getMainLooper()).postDelayed({
                 tapNormalized(targetX, targetY) {
-                    Handler(Looper.getMainLooper()).postDelayed({ done?.invoke() }, 1500)
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        tapNormalized(closeX, closeY) {
+                            Handler(Looper.getMainLooper()).postDelayed({ done?.invoke() }, 900)
+                        }
+                    }, 450)
                 }
             }, 500)
         }
@@ -407,6 +413,8 @@ class FarmAccessibilityService : AccessibilityService() {
     companion object {
         const val KEY_CHAT_X = "chat_x"
         const val KEY_CHAT_Y = "chat_y"
+        const val KEY_CHAT_CLOSE_X = "chat_close_x"
+        const val KEY_CHAT_CLOSE_Y = "chat_close_y"
         const val KEY_FARM_X = "farm_x"
         const val KEY_FARM_Y = "farm_y"
         const val KEY_BUFF_X = "buff_x"
